@@ -61,13 +61,13 @@ app.get("/authorize", (req, res, next) => {
 
 	if (clientId in clients && containsAll(clients[clientId].scopes, scope.split(" "))) {
 		res.status(200)
-		res.render("login", {
+		return res.render("login", {
 			client: clients[clientId],
 			scope: scope,
 			requestId: reqId
 		})
 	} else {
-		res.status(401).send()
+		return res.status(401).send()
 	}
 })
 
@@ -80,7 +80,7 @@ app.post("/approve", (req, res, next) => {
 		let request = requests[reqId]
 		let code = randomString()
 		let redirect_uri = new URL(request.redirect_uri)
-		let state = request.state
+		state = request.state
 
 		delete requests[reqId]
 		authorizationCodes[code] = {
@@ -90,38 +90,37 @@ app.post("/approve", (req, res, next) => {
 		redirect_uri.searchParams.set("code", code)
 		redirect_uri.searchParams.set("state", state)
 
-		res.redirect(redirect_uri)
+		return res.redirect(redirect_uri)
 	} else {
-		res.status(401).send()
+		return res.status(401).send()
 	}
 })
 
 app.post("/token", (req, res, next) => {
-	let authToken = req.headers.authorization
+	let authorization = req.headers.authorization
 	let code = req.body.code
 
-	if (authToken === undefined) {
-		res.status(401).send()
+	if (authorization === undefined) {
+		return res.status(401).send()
 	}
 
-	let { clientId, clientSecret } = decodeAuthCredentials(authToken)
+	let { clientId, clientSecret } = decodeAuthCredentials(authorization)
 
 	if (clientId in clients && clients[clientId].clientSecret === clientSecret && code in authorizationCodes) {
 		let { clientReq, userName } = authorizationCodes[code]
 		delete authorizationCodes[code]
 
-		let privateKey = fs.readFileSync('assets/private_key.pem')
 		let token = jwt.sign({
 			userName: userName,
 			scope: clientReq.scope
-		}, privateKey, { algorithm: 'RS256' })
+		}, config.privateKey, { algorithm: 'RS256' })
 
-		res.status(200).json({
+		return res.status(200).json({
 			access_token: token,
 			token_type: "Bearer"
 		})
 	} else {
-		res.status(401).send()
+		return res.status(401).send()
 	}
 })
 
