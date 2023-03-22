@@ -79,7 +79,7 @@ app.post("/approve", (req, res, next) => {
 	if (userName in users && users[userName] === password && reqId in requests) {
 		let request = requests[reqId]
 		let code = randomString()
-		let redirect_uri = new URL(request.redirect_uri)
+		let redirectUri = new URL(request.redirect_uri)
 		state = request.state
 
 		delete requests[reqId]
@@ -87,10 +87,10 @@ app.post("/approve", (req, res, next) => {
 			clientReq: request,
 			userName: userName
 		}
-		redirect_uri.searchParams.set("code", code)
-		redirect_uri.searchParams.set("state", state)
+		redirectUri.searchParams.set("code", code)
+		redirectUri.searchParams.set("state", state)
 
-		return res.redirect(redirect_uri)
+		return res.redirect(redirectUri)
 	} else {
 		return res.status(401).send()
 	}
